@@ -35,11 +35,8 @@ open class TouchesWindow: UIWindow {
                     beganTouches.insert(touch)
                 case .ended, .cancelled:
                     endedTouches.insert(touch)
-                case .moved, .stationary, .regionEntered, .regionMoved, .regionExited:
-                    // no-op
-                    break
-                @unknown default:
-                    // no-op
+                default:
+                    // .moved, .stationary, .regionEntered, .regionMoved, .regionExited:
                     break
                 }
             }
@@ -67,9 +64,7 @@ open class TouchesWindow: UIWindow {
             let alpha = touchesColor.dmz_alpha
             let forceColor = touchesColor.withAlphaComponent(alpha/2)
             
-            let view = TouchView(radius: touchesRadius)
-            view.setCoreColor(touchesColor)
-            view.setForceColor(forceColor)
+            let view = TouchView()
             view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude)
             
             let touchEntity = TouchEntity(touch: touch, view: view)
@@ -89,9 +84,7 @@ open class TouchesWindow: UIWindow {
             }
             
             let touchEntity = getTouchEntity(forTouch:touch)!
-            touchEntity.hasBeenMoved = (touchEntity.hasBeenMoved || (touch.force == 0 && touch.phase == .moved))
             touchEntity.view.center = touchEntity.touch.location(in: self)
-            touchEntity.view.setForceRadius(touchEntity.hasBeenMoved == false ? forceRadius : 0)
         }
     }
     
@@ -126,43 +119,18 @@ fileprivate extension UIWindow {
 // MARK: TouchView
 
 fileprivate class TouchView : UIView {
-    private let core: UIView
-    private let force: UIView
-    
-    public init(radius: CGFloat) {
-        let frame = CGRect(x: 0, y: 0, width: radius * 2, height: radius * 2)
-        
-        force = UIView(frame: frame)
-        force.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        force.layer.masksToBounds = true
-        force.layer.cornerRadius = radius
-        
-        core = UIView(frame: frame)
-        core.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        core.layer.masksToBounds = true
-        core.layer.cornerRadius = radius
-        
-        super.init(frame: frame)
-        
-        addSubview(force)
-        addSubview(core)
+    public init() {
+        super.init(frame: .init(x: 0, y: 0, width: 50, height: 50))
+        backgroundColor = .blue.withAlphaComponent(0.3)
     }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    public func setCoreColor(_ coreColor: UIColor) {
-        core.backgroundColor = coreColor
-    }
-    
-    public func setForceColor(_ forceColor: UIColor) {
-        force.backgroundColor = forceColor
-    }
-    
-    public func setForceRadius(_ forceRadius: CGFloat) {
-        let scale = 1.0 + 0.6 * forceRadius
-        force.transform = CGAffineTransform(scaleX: scale, y: scale)
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = frame.height / 2
     }
 }
 
@@ -171,7 +139,6 @@ fileprivate class TouchView : UIView {
 fileprivate class TouchEntity: Hashable {
     let touch: UITouch
     let view: TouchView
-    var hasBeenMoved: Bool = false
     
     init(touch: UITouch, view: TouchView) {
         self.touch = touch
