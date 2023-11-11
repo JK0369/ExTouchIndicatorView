@@ -16,7 +16,7 @@ open class TouchesWindow: UIWindow {
         }
     }
     
-    private var toucheEntitySet = Set<TouchEntity>()
+    private var toucheEntitySet = Set<TouchInfo>()
     
     open override func sendEvent(_ event: UIEvent) {
         defer { super.sendEvent(event) }
@@ -28,7 +28,7 @@ open class TouchesWindow: UIWindow {
         
         allTouches
             .forEach { touch in
-                switch (touch.phase) {
+                switch touch.phase {
                 case .began:
                     beganTouches.insert(touch)
                 case .ended, .cancelled:
@@ -46,7 +46,7 @@ open class TouchesWindow: UIWindow {
         super.sendEvent(event)
     }
     
-    private func getTouchEntity(forTouch touch: UITouch) -> TouchEntity? {
+    private func getTouchInfo(forTouch touch: UITouch) -> TouchInfo? {
         toucheEntitySet.first(where: { $0.touch == touch })
     }
     
@@ -55,9 +55,9 @@ open class TouchesWindow: UIWindow {
             .forEach { touch in
                 let view = TouchView()
                 view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude)
-                let touchEntity = TouchEntity(touch: touch, view: view)
+                let touchInfo = TouchInfo(touch: touch, view: view)
                 
-                toucheEntitySet.insert(touchEntity)
+                toucheEntitySet.insert(touchInfo)
                 addSubview(view)
             }
     }
@@ -65,17 +65,17 @@ open class TouchesWindow: UIWindow {
     private func handleTouchesMoved(touches: Set<UITouch>) {
         touches
             .forEach { touch in
-                let touchEntity = getTouchEntity(forTouch: touch)
-                touchEntity?.view.center = touchEntity?.touch.location(in: self) ?? .zero
+                let touchInfo = getTouchInfo(forTouch: touch)
+                touchInfo?.view.center = touchInfo?.touch.location(in: self) ?? .zero
             }
     }
     
     func handleTouchesEnded(touches: Set<UITouch>) {
         touches
-            .compactMap { getTouchEntity(forTouch: $0) }
-            .forEach { touchEntity in
-                touchEntity.view.removeFromSuperview()
-                toucheEntitySet.remove(touchEntity)
+            .compactMap { getTouchInfo(forTouch: $0) }
+            .forEach { touchInfo in
+                touchInfo.view.removeFromSuperview()
+                toucheEntitySet.remove(touchInfo)
             }
     }
 }
@@ -98,9 +98,9 @@ private class TouchView : UIView {
     }
 }
 
-// MARK: TouchEntity
+// MARK: TouchInfo
 
-private class TouchEntity: Hashable {
+private class TouchInfo: Hashable {
     let touch: UITouch
     let view: TouchView
     
@@ -113,7 +113,7 @@ private class TouchEntity: Hashable {
         hasher.combine(touch.hashValue)
     }
     
-    public static func ==(lhs: TouchEntity, rhs: TouchEntity) -> Bool {
+    public static func ==(lhs: TouchInfo, rhs: TouchInfo) -> Bool {
         lhs.touch == rhs.touch
     }
 }
