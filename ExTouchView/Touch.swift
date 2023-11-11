@@ -10,24 +10,18 @@ import UIKit
 open class TouchesWindow: UIWindow {
     public var touchesEnabled: Bool = false {
         didSet {
-            if touchesEnabled && toucheEntitySet == nil {
-                toucheEntitySet = Set<TouchEntity>()
-            } else if !touchesEnabled && toucheEntitySet != nil {
+            if !touchesEnabled {
                 toucheEntitySet.forEach({ $0.view.removeFromSuperview() })
-                toucheEntitySet = nil
             }
         }
     }
     
-    private var toucheEntitySet: Set<TouchEntity>!
+    private var toucheEntitySet = Set<TouchEntity>()
     
     open override func sendEvent(_ event: UIEvent) {
         defer { super.sendEvent(event) }
         
-        guard
-            toucheEntitySet != nil,
-            let allTouches = event.allTouches
-        else { return }
+        guard let allTouches = event.allTouches else { return }
         
         var beganTouches = Set<UITouch>()
         var endedTouches = Set<UITouch>()
@@ -57,29 +51,32 @@ open class TouchesWindow: UIWindow {
     }
     
     private func handleTouchesBegan(touches: Set<UITouch>) {
-        for touch in touches {
-            let view = TouchView()
-            view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude)
-            let touchEntity = TouchEntity(touch: touch, view: view)
-            
-            toucheEntitySet.insert(touchEntity)
-            addSubview(view)
-        }
+        touches
+            .forEach { touch in
+                let view = TouchView()
+                view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude)
+                let touchEntity = TouchEntity(touch: touch, view: view)
+                
+                toucheEntitySet.insert(touchEntity)
+                addSubview(view)
+            }
     }
     
     private func handleTouchesMoved(touches: Set<UITouch>) {
-        for touch in touches {
-            let touchEntity = getTouchEntity(forTouch: touch)
-            touchEntity?.view.center = touchEntity?.touch.location(in: self) ?? .zero
-        }
+        touches
+            .forEach { touch in
+                let touchEntity = getTouchEntity(forTouch: touch)
+                touchEntity?.view.center = touchEntity?.touch.location(in: self) ?? .zero
+            }
     }
     
     func handleTouchesEnded(touches: Set<UITouch>) {
-        for touch in touches {
-            guard let touchEntity = getTouchEntity(forTouch:touch) else { continue }
-            touchEntity.view.removeFromSuperview()
-            toucheEntitySet.remove(touchEntity)
-        }
+        touches
+            .compactMap { getTouchEntity(forTouch: $0) }
+            .forEach { touchEntity in
+                touchEntity.view.removeFromSuperview()
+                toucheEntitySet.remove(touchEntity)
+            }
     }
 }
 
