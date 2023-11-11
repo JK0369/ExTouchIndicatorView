@@ -11,12 +11,12 @@ open class TouchesWindow: UIWindow {
     public var touchesEnabled: Bool = false {
         didSet {
             if !touchesEnabled {
-                toucheEntitySet.forEach({ $0.view.removeFromSuperview() })
+                touchInfoSet.forEach({ $0.view.removeFromSuperview() })
             }
         }
     }
     
-    private var toucheEntitySet = Set<TouchInfo>()
+    private var touchInfoSet = Set<TouchInfo>()
     
     open override func sendEvent(_ event: UIEvent) {
         defer { super.sendEvent(event) }
@@ -47,17 +47,17 @@ open class TouchesWindow: UIWindow {
     }
     
     private func getTouchInfo(forTouch touch: UITouch) -> TouchInfo? {
-        toucheEntitySet.first(where: { $0.touch == touch })
+        touchInfoSet.first(where: { $0.touch == touch })
     }
     
     private func handleTouchesBegan(touches: Set<UITouch>) {
         touches
             .forEach { touch in
                 let view = TouchView()
-                view.layer.zPosition = CGFloat(Float.greatestFiniteMagnitude)
+                view.layer.zPosition = .greatestFiniteMagnitude
                 let touchInfo = TouchInfo(touch: touch, view: view)
                 
-                toucheEntitySet.insert(touchInfo)
+                touchInfoSet.insert(touchInfo)
                 addSubview(view)
             }
     }
@@ -75,7 +75,7 @@ open class TouchesWindow: UIWindow {
             .compactMap { getTouchInfo(forTouch: $0) }
             .forEach { touchInfo in
                 touchInfo.view.removeFromSuperview()
-                toucheEntitySet.remove(touchInfo)
+                touchInfoSet.remove(touchInfo)
             }
     }
 }
